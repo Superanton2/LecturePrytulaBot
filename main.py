@@ -5,7 +5,7 @@ import sys
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-# from app.db.db_setup import init_db
+from app.db.db_setup import init_db
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -34,8 +34,8 @@ async def main():
     await asyncio.sleep(5)
 
     # start db
-    # print("start db")
-    # await init_db()
+    print("start db")
+    await init_db()
 
     # And the run events dispatching
     print("Start bot")

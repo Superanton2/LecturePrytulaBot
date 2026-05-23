@@ -9,17 +9,15 @@ import app.utils.keyboards as kb
 from app.utils.funcs import safe_reply
 from app.db.db_requests import is_admin
 from app.routers.registration_router import router as registration_router
-from app.routers.profile_router import router as profile_router
-from app.routers.admin_routers.admin_staff_router import router as admin_staff_manage
-from app.routers.admin_routers.admin_archive_router import router as admin_archive_router
+# from app.routers.profile_router import router as profile_router
+from app.routers.admin_router import router as admin_router
 
 load_dotenv()
 router = Router()
 router.include_routers(
     registration_router,
-    profile_router,
-    admin_staff_manage,
-    admin_archive_router,
+    # profile_router,
+    admin_router,
 )
 
 @router.message(Command("start"))

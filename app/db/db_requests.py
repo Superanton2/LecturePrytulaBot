@@ -1,12 +1,113 @@
-import datetime
+from sqlalchemy import select, insert, update
+from app.db.db_setup import engine, admin_list, user_list
 
-from sqlalchemy import select, insert, update, func, delete
-from app.db.db_setup import engine, bookings, admin_list, worker_list, user_list, cars
+async def add_user(tg_id: int, name: str, phone: str, mail: str,
+                   education: str = "не навчаюсь", faculty: str = "не навчаюсь") -> None:
+    """
+    add user to db
+    :param tg_id: telegram id of user
+    :param name: Ures name
+    :param phone: +380 ...
+    :param mail: example@google.com
+    :param education: type of education
+    :param faculty: name of faculty
 
-import os
-from dotenv import load_dotenv
+    :return: None
+    """
+    async with engine.begin() as conn:
+        insert_statement = insert(user_list).values(
+            telegram_id=tg_id,
+            name=name,
+            phone=phone,
+            mail=mail,
+            education=education,
+            faculty=faculty
+        )
+        await conn.execute(insert_statement)
 
-load_dotenv()
+async def get_user(tg_id: int):
+    """
+    Fing user data in db
+    :param tg_id:
+    :return: User data or None is there are no user in db
+    """
+    async with engine.begin() as conn:
+        select_statement = select(user_list).where(user_list.c.telegram_id == tg_id)
+        result = await conn.execute(select_statement)
+        return result.fetchone()
 
-async def is_admin(user_id: int):
-    return True
+async def get_all_users():
+    async with engine.begin() as conn:
+        select_statement = select(user_list)
+        result = await conn.execute(select_statement)
+        return result.fetchall()
+
+async def update_user_field(tg_id: int, field_name: str, new_value: str) -> None:
+    """
+    update particular field in user db
+    :param tg_id: id of user
+    :param field_name: field to change. Have to be 'name', 'phone', 'mail', 'education' or 'faculty'
+    :param new_value: value to write
+    :return: None
+    """
+    async with engine.begin() as conn:
+        update_data = {field_name: new_value}
+
+        update_statement = (
+            update(user_list)
+            .where(user_list.c.telegram_id == tg_id)
+            .values(**update_data)
+        )
+        await conn.execute(update_statement)
+
+async def is_admin(user_id: int) -> bool:
+    """
+    Checks whether a person has an ACTIVE status in his role
+    """
+
+    async with engine.begin() as conn:
+        select_statement = select(admin_list).where(
+            (admin_list.c.telegram_id == user_id) & (admin_list.c.is_active == True)
+        )
+
+        result = await conn.execute(select_statement)
+        return result.fetchone() is not None
+
+async def get_all_admins():
+    """
+    Returns the list of ACTIVE administrators only
+    """
+    async with engine.begin() as conn:
+        select_statement = select(admin_list).where(admin_list.c.is_active == True)
+        result = await conn.execute(select_statement)
+        return result.fetchall()
+
+async def add_admin(tg_id: int, name: str) -> None:
+    """
+    Adds or restores the administrator
+    """
+    async with engine.begin() as conn:
+        check_stmt = select(admin_list).where(admin_list.c.telegram_id == tg_id)
+        result = await conn.execute(check_stmt)
+        existing = result.fetchone()
+
+        if existing:
+            update_stmt = update(admin_list).where(
+                admin_list.c.telegram_id == tg_id
+            ).values(is_active=True, name=name)
+            await conn.execute(update_stmt)
+        else:
+            insert_stmt = insert(admin_list).values(
+                telegram_id=tg_id, name=name, is_active=True
+            )
+            await conn.execute(insert_stmt)
+
+async def remove_admin(tg_id: int) -> None:
+    """
+    administrator deactivation
+    """
+    async with engine.begin() as conn:
+        update_statement = update(admin_list).where(
+            admin_list.c.telegram_id == tg_id
+        ).values(is_active=False)
+        await conn.execute(update_statement)

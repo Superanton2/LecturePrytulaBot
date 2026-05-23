@@ -1,5 +1,4 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from app.utils.funcs import get_car_emoji, UKR_DAYS
 
 def create_main_keyboard(is_admin: bool= False) -> InlineKeyboardBuilder:
     builder = InlineKeyboardBuilder()
@@ -8,7 +7,7 @@ def create_main_keyboard(is_admin: bool= False) -> InlineKeyboardBuilder:
     builder.adjust(1)
 
     if is_admin:
-        builder.button( text="🔐 Панель Адміна", callback_data="admin_hub", style="danger")
+        builder.button( text="🔐 Панель Адміна", callback_data="admin_hub")
         builder.adjust(1)
     return builder
 
@@ -16,7 +15,7 @@ def create_main_keyboard(is_admin: bool= False) -> InlineKeyboardBuilder:
 def create_main_admin_keyboard() -> InlineKeyboardBuilder:
         builder = InlineKeyboardBuilder()
         builder.button(text="👥 Менеджмент персоналу", callback_data="admin_staff_manage_new")
-        builder.button(text="📊 Google табличка", callback_data="admin_archive")
+        builder.button(text="📊 Google табличка", url="SHEET_URL")
         builder.button(text="зупинити реєстрацію", callback_data="admin_stop_registration")
         builder.button(text="написати учасникам", callback_data="admin_write_participants") # зареєустровані / всі учасники
 
