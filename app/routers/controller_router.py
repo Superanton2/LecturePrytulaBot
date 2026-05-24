@@ -48,11 +48,6 @@ async def cmd_back_hub(callback: types.CallbackQuery, state: FSMContext):
     text = ("Вітаю! Я бот для реєстрації на лекцію про благодійність від Сергія Притули. "
             "Після реєстрації ти побачиш час та місце проведення заходу. \nОбери дію:\n")
 
-    await callback.reply(
-        text=text,
-        reply_markup=keyboard.as_markup()
-    )
-
 
     if callback.data == "controller_hub_new":
         await safe_reply(

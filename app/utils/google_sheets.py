@@ -1,8 +1,6 @@
 import gspread
 import asyncio
 import os
-from sqlalchemy import select
-from app.db.db_setup import engine, admin_list, user_list
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -59,33 +57,3 @@ async def update_user_in_sheet(tg_id: int, field: str, new_value: str):
     Доступні поля (field): 'name', 'phone', 'mail', 'education', 'faculty'
     """
     await asyncio.to_thread(_update_user_sync, str(tg_id), field, new_value)
-
-
-def _sync_admins_sync(admin_data: list):
-    """Синхронна функція для повного перезапису списку адмінів"""
-    sh = get_sheet()
-    ws_admins = sh.worksheet("Admins")
-
-    # Очищаємо старі дані (залишаємо перший рядок під заголовки)
-    ws_admins.batch_clear(["A2:C1000"])
-
-    if admin_data:
-        ws_admins.update(range_name="A2", values=admin_data)
-
-
-async def sync_admins_to_sheet():
-    """Асинхронно дістає всіх адмінів з БД і синхронізує їх з таблицею"""
-    admin_rows = []
-
-    async with engine.begin() as conn:
-        admins_result = await conn.execute(select(admin_list))
-        admins = list(admins_result.fetchall())
-
-    # Сортуємо: спочатку активні
-    admins.sort(key=lambda x: x.is_active, reverse=True)
-
-    for a in admins:
-        status = "Активний" if a.is_active else "Деактивований"
-        admin_rows.append([str(a.telegram_id), a.name, status])
-
-    await asyncio.to_thread(_sync_admins_sync, admin_rows)

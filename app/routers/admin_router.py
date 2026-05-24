@@ -1,18 +1,12 @@
-import os
-from dotenv import load_dotenv
-load_dotenv()
-
 from aiogram import Router, types, F
-from aiogram.fsm.context import FSMContext
 
 from app.utils.keyboards import create_main_admin_keyboard
 from app.db.db_requests import is_admin
 
-SHEET_URL = os.getenv("SHEET_URL")
 router = Router()
 
 @router.callback_query(F.data == "admin_hub")
-async def admin_dashboard(callback: types.CallbackQuery, state: FSMContext):
+async def admin_dashboard(callback: types.CallbackQuery):
     if not await (is_admin(callback.from_user.id)):
         await callback.answer("⛔ Доступ заборонено", show_alert=True)
         return

@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+SHEET_URL = os.getenv("SHEET_URL")
+
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def create_main_keyboard(is_admin: bool= False) -> InlineKeyboardBuilder:
@@ -14,21 +19,9 @@ def create_main_keyboard(is_admin: bool= False) -> InlineKeyboardBuilder:
 
 def create_main_admin_keyboard() -> InlineKeyboardBuilder:
         builder = InlineKeyboardBuilder()
-        builder.button(text="👥 Менеджмент персоналу", callback_data="admin_staff_manage_new")
-        builder.button(text="📊 Google табличка", url="SHEET_URL")
-        builder.button(text="зупинити реєстрацію", callback_data="admin_stop_registration")
-        builder.button(text="написати учасникам", callback_data="admin_write_participants") # зареєустровані / всі учасники
+        builder.button(text="📊 Google табличка", url=SHEET_URL)
+        builder.button(text="Зупинити реєстрацію", callback_data="admin_stop_registration")
+        builder.button(text="Написати учасникам", callback_data="admin_write_participants") # зареєустровані / всі учасники
 
         builder.adjust(1)
         return builder
-
-
-def create_admin_staff_keyboard() -> InlineKeyboardBuilder:
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔑 Додати адміна", callback_data="add_admin")
-    builder.button(text="🛡️Керування доступом", callback_data="permission_control")
-
-    builder.button(text="Назад", callback_data="controller_hub", style="primary")
-    builder.adjust(1)
-
-    return builder
