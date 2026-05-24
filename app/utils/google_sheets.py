@@ -17,11 +17,11 @@ def _append_row_sync(sheet_name: str, row_data: list):
     ws.append_row(row_data)
 
 
-async def add_user_to_sheet(tg_id: int, name: str, phone: str,
+async def add_user_to_sheet(tg_id: int, username: str, name: str, phone: str,
                             mail: str, education: str, faculty: str):
     """Додає нового зареєстрованого користувача в таблицю"""
     try:
-        row = [str(tg_id), name, phone, mail, education, faculty]
+        row = [str(tg_id), username, name, phone, mail, education, faculty]
         await asyncio.to_thread(_append_row_sync, "Users", row)
         print(f"✅ Користувача {name} успішно додано в Sheets!")
     except Exception as e:
@@ -37,13 +37,13 @@ def _update_user_sync(tg_id: str, field: str, new_value: str):
         cell = ws.find(str(tg_id), in_column=1)
         if cell:
             # Мапа колонок відповідно до структури:
-            # A: tg_id, B: name, C: phone, D: mail, E: education, F: faculty
             col_map = {
-                "name": "B",
-                "phone": "C",
-                "mail": "D",
-                "education": "E",
-                "faculty": "F"
+                "username": "B",
+                "name": "C",
+                "phone": "D",
+                "mail": "E",
+                "education": "F",
+                "faculty": "G"
             }
             if field in col_map:
                 ws.update(range_name=f"{col_map[field]}{cell.row}", values=[[new_value]])
@@ -54,6 +54,6 @@ def _update_user_sync(tg_id: str, field: str, new_value: str):
 async def update_user_in_sheet(tg_id: int, field: str, new_value: str):
     """
     Оновлює дані користувача.
-    Доступні поля (field): 'name', 'phone', 'mail', 'education', 'faculty'
+    Доступні поля (field): 'name', 'username', 'phone', 'mail', 'education', 'faculty'
     """
     await asyncio.to_thread(_update_user_sync, str(tg_id), field, new_value)

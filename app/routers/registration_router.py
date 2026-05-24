@@ -4,9 +4,9 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from aiogram.types import ReplyKeyboardRemove
 
+from app.utils.bot_state import global_state
 from app.utils.google_sheets import add_user_to_sheet
 from app.db.db_requests import add_user, get_user
-
 import asyncio
 import logging
 
@@ -25,6 +25,11 @@ class RegisterForm(StatesGroup):
 
 @router.callback_query(F.data == "registration")
 async def start_registration(callback: types.CallbackQuery, state: FSMContext):
+    # Перевіряємо, чи відкрита реєстрація
+    if not global_state["registration_open"]:
+        await callback.answer("На жаль, реєстрація вже закрита ❌", show_alert=True)
+        return
+
     # Перевіряємо, чи користувач вже зареєстрований
     existing_user = await get_user(callback.from_user.id)
 
@@ -265,9 +270,13 @@ async def confirm_registration(callback: types.CallbackQuery, state: FSMContext)
     education = data.get('education', 'не навчаюсь')
     faculty = data.get('faculty', 'не навчаюсь')
 
+    tg_username = callback.from_user.username
+    username_field = f"@{tg_username}" if tg_username else "немає"
+
     try:
         await add_user(
             tg_id=callback.from_user.id,
+            username=username_field,
             name=name,
             phone=phone,
             mail=mail,
@@ -277,6 +286,7 @@ async def confirm_registration(callback: types.CallbackQuery, state: FSMContext)
 
         asyncio.create_task(add_user_to_sheet(
             tg_id=callback.from_user.id,
+            username=username_field,
             name=name,
             phone=phone,
             mail=mail,

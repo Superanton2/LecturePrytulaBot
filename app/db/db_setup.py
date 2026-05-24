@@ -24,6 +24,7 @@ user_list = Table(
     "user_list",
     meta,
     Column("telegram_id", BigInteger, primary_key=True),
+    Column("username", String, nullable=True),
     Column("name", String, nullable=False), # ПІБ
     Column("phone", String, nullable=False),
     Column("mail", String, nullable=False),

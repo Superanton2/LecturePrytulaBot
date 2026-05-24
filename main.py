@@ -7,7 +7,6 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from app.db.db_setup import init_db
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import os
 from dotenv import load_dotenv

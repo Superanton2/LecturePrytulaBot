@@ -1,11 +1,12 @@
 from sqlalchemy import select, insert, update
 from app.db.db_setup import engine, admin_list, user_list
 
-async def add_user(tg_id: int, name: str, phone: str, mail: str,
+async def add_user(tg_id: int, username: str, name: str, phone: str, mail: str,
                    education: str = "не навчаюсь", faculty: str = "не навчаюсь") -> None:
     """
     add user to db
     :param tg_id: telegram id of user
+    :param username: username of user
     :param name: Ures name
     :param phone: +380 ...
     :param mail: example@google.com
@@ -17,6 +18,7 @@ async def add_user(tg_id: int, name: str, phone: str, mail: str,
     async with engine.begin() as conn:
         insert_statement = insert(user_list).values(
             telegram_id=tg_id,
+            username=username,
             name=name,
             phone=phone,
             mail=mail,

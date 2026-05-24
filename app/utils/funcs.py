@@ -1,7 +1,6 @@
 from aiogram import types
 from aiogram.exceptions import TelegramBadRequest
 
-import app.db.db_requests as db
 
 # "───────────────\n"
 
