@@ -28,11 +28,11 @@ async def cmd_start(message: types.Message):
 
     text = ("Вітаю! Я бот для реєстрації на лекцію про благодійність від Сергія Притули. "
                 "Ви не зареєстровані, після реєстрації ви побачите час та місце проведення заходу.")
-    # if is_user_admin:
-    #     keyboard = kb.create_main_admin_keyboard()
-    #     text += ("\n\n───────────────\n"
-    #             "Ви маєте права Адміна\nОбери дію:\n")
-    if existing_user:
+    if is_user_admin:
+        keyboard = kb.create_main_admin_keyboard()
+        text += ("\n\n───────────────\n"
+                "Ви маєте права Адміна\nОбери дію:\n")
+    elif existing_user:
         keyboard = kb.create_main_keyboard(is_existing_user=existing_user)
         text = ("Ви вже зареєстровані. Дата 24 травня. Вітаю Макса Коваля з днюхою!\n"
                 "Можете переглянути свої дані в профілі.")
@@ -57,11 +57,11 @@ async def cmd_back_hub(callback: types.CallbackQuery, state: FSMContext):
 
     text = ("Вітаю! Я бот для реєстрації на лекцію про благодійність від Сергія Притули. "
                 "Ви не зареєстровані, після реєстрації ви побачите час та місце проведення заходу.")
-    # if is_user_admin:
-    #     keyboard = kb.create_main_admin_keyboard()
-    #     text += ("\n\n───────────────\n"
-    #             "Ви маєте права Адміна\nОбери дію:\n")
-    if existing_user:
+    if is_user_admin:
+        keyboard = kb.create_main_admin_keyboard()
+        text += ("\n\n───────────────\n"
+                "Ви маєте права Адміна\nОбери дію:\n")
+    elif existing_user:
         keyboard = kb.create_main_keyboard(is_existing_user=existing_user)
         text = ("Ви вже зареєстровані. Дата 24 травня. Вітаю Макса Коваля з днюхою!\n"
                 "Можете переглянути свої дані в профілі.")
