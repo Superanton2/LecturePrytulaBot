@@ -169,7 +169,7 @@ async def process_education_choice(callback: types.CallbackQuery, state: FSMCont
         await callback.answer()
 
     elif choice == "edu_other":
-        await callback.message.edit_text("Введіть назву вашого навчального закладу:")
+        await callback.message.edit_text("[4/5] Введіть назву вашого навчального закладу:")
         await state.set_state(RegisterForm.entering_other_edu)
         await callback.answer()
 
@@ -208,9 +208,6 @@ async def process_faculty(message: types.Message, state: FSMContext):
     await show_confirmation_screen(message, state)
 
 
-
-# КРОК ПЕРЕВІРКИ ДАНИХ (ЕКРАН ПІДТВЕРДЖЕННЯ)
-# ==========================================
 async def show_confirmation_screen(event: types.Message | types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     name = data.get('name')
@@ -234,8 +231,8 @@ async def show_confirmation_screen(event: types.Message | types.CallbackQuery, s
     )
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Підтвердити реєстрацію", callback_data="confirm_registration")
-    builder.button(text="❌ Скасувати", callback_data="cancel_registration")
+    builder.button(text="Підтвердити реєстрацію", callback_data="confirm_registration", style="success")
+    builder.button(text="Скасувати", callback_data="cancel_registration", style="danger")
     builder.adjust(1)
 
     if isinstance(event, types.CallbackQuery):
@@ -328,7 +325,7 @@ async def confirm_registration(callback: types.CallbackQuery, state: FSMContext)
 @router.callback_query(RegisterForm.waiting_confirmation, F.data == "cancel_registration")
 async def cancel_registration(callback: types.CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
-    builder.button(text="Повернутись в меню", callback_data="controller_hub_new")
+    builder.button(text="Повернутись в меню", callback_data="controller_hub")
 
     await callback.message.edit_text(
         text="❌ <b>Реєстрацію скасовано.</b> Ваші дані не було збережено в системі.",

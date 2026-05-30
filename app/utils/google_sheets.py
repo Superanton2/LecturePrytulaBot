@@ -33,10 +33,8 @@ def _update_user_sync(tg_id: str, field: str, new_value: str):
     sh = get_sheet()
     ws = sh.worksheet("Users")
     try:
-        # Шукаємо ID у першій колонці (Колонка A)
         cell = ws.find(str(tg_id), in_column=1)
         if cell:
-            # Мапа колонок відповідно до структури:
             col_map = {
                 "username": "B",
                 "name": "C",
@@ -46,9 +44,13 @@ def _update_user_sync(tg_id: str, field: str, new_value: str):
                 "faculty": "G"
             }
             if field in col_map:
-                ws.update(range_name=f"{col_map[field]}{cell.row}", values=[[new_value]])
+                cell_label = f"{col_map[field]}{cell.row}"
+                ws.update_acell(cell_label, new_value)
+                print(f"✅ Sheets: Оновлено ID {tg_id}, поле {field} -> {new_value}")
+        else:
+            print(f"⚠️ Sheets: Користувача {tg_id} не знайдено для оновлення.")
     except Exception as e:
-        print(f"❌ Помилка оновлення користувача в Sheets: {e}")
+        print(f"❌ Sheets: Помилка оновлення користувача: {e}")
 
 
 async def update_user_in_sheet(tg_id: int, field: str, new_value: str):
