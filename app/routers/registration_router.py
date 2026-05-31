@@ -9,6 +9,10 @@ from app.utils.google_sheets import add_user_to_sheet
 from app.db.db_requests import add_user, get_user
 import asyncio
 import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = Router()
 
@@ -20,7 +24,8 @@ class RegisterForm(StatesGroup):
     choosing_education = State()
     entering_other_edu = State()
     entering_faculty = State()
-    waiting_confirmation = State()  # Новий стан для перевірки даних
+    agreeing_to_rules = State()
+    waiting_confirmation = State()
 
 
 @router.callback_query(F.data == "registration")
@@ -30,18 +35,17 @@ async def start_registration(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("На жаль, реєстрація вже закрита ❌", show_alert=True)
         return
 
-    # Перевіряємо, чи користувач вже зареєстрований
     existing_user = await get_user(callback.from_user.id)
 
     if existing_user:
         builder = InlineKeyboardBuilder()
         builder.button(text="🪪 Перейти в профіль", callback_data="profile")
-        builder.button(text="Головне меню", callback_data="controller_hub")
+        builder.button(text="Головне меню", callback_data="controller_hub", style="primary")
 
         await callback.message.edit_text(
-            "❌ <b>Ви вже зареєстровані на цей захід!</b>\n\n"
-            "Якщо ви хочете змінити свої дані (наприклад, номер телефону чи факультет), "
-            "перейдіть у свій Профіль.",
+            "❌ <b>Ти вже зареєстрований на цей захід!</b>\n\n"
+            "Якщо ти хочете змінити свої дані (наприклад, номер телефону чи факультет), "
+            "перейди у свій Профіль.",
             reply_markup=builder.as_markup()
         )
         await callback.answer()
@@ -53,7 +57,7 @@ async def start_registration(callback: types.CallbackQuery, state: FSMContext):
         pass
 
     new_msg = await callback.message.answer(
-        "[1/5] 👤 Введіть ваше ім'я та прізвище:"
+        "[1/5] 👤 Введи твоє ПІБ \nПриклад: Корнага Ярослав Ігорович"
     )
 
     await state.update_data(main_message_id=new_msg.message_id)
@@ -78,10 +82,10 @@ async def process_name(message: types.Message, state: FSMContext):
             pass
 
     builder = ReplyKeyboardBuilder()
-    builder.button(text="📱 Надіслати мій номер", request_contact=True)
+    builder.button(text="Надіслати мій номер", request_contact=True)
 
     new_msg = await message.answer(
-        "[2/5] Введіть ваш номер телефону або натисніть кнопку нижче:",
+        "[2/5] 📱Введи твій номер телефону або натисни кнопку нижче\nПриклад: 095 027...",
         reply_markup=builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
     )
 
@@ -109,13 +113,13 @@ async def process_phone(message: types.Message, state: FSMContext):
     elif message.text:
         phone = message.text
     else:
-        await message.answer("[2/5] 📱 Будь ласка, надішліть номер телефону текстом або контактом.")
+        await message.answer("[2/5] 📱Введи твій номер телефону або натисни кнопку нижче\nПриклад: 095 027...")
         return
 
     await state.update_data(phone=phone)
 
     new_msg = await message.answer(
-        "[3/5] Введіть вашу електронну пошту:",
+        "[3/5] ✉️ Введи твою електронну пошту\nПриклад: email@example.com",
         reply_markup=ReplyKeyboardRemove()
     )
     await state.update_data(main_message_id=new_msg.message_id)
@@ -139,13 +143,13 @@ async def process_mail(message: types.Message, state: FSMContext):
             pass
 
     builder = InlineKeyboardBuilder()
-    builder.button(text="🎓 КПІ", callback_data="edu_kpi")
+    builder.button(text="🎓 КПІ ім. Ігоря Сікорського", callback_data="edu_kpi")
     builder.button(text="🏫 Інший університет", callback_data="edu_other")
     builder.button(text="❌ Не навчаюсь", callback_data="edu_none")
     builder.adjust(1)
 
     new_msg = await message.answer(
-        "[4/5] Вкажіть ваш статус щодо навчання:",
+        "[4/5] Вкажи твій статус щодо навчання:",
         reply_markup=builder.as_markup()
     )
 
@@ -160,16 +164,16 @@ async def process_education_choice(callback: types.CallbackQuery, state: FSMCont
     if choice == "edu_none":
         await state.update_data(education="не навчаюсь", faculty="не навчаюсь")
         await callback.answer()
-        await show_confirmation_screen(callback, state)
+        await ask_for_rules(callback, state)
 
     elif choice == "edu_kpi":
         await state.update_data(education="КПІ")
-        await callback.message.edit_text("[5/5] Введіть назву вашого факультету:")
+        await callback.message.edit_text("[5/5] Введи назву твого факультету\nПриклад: ФІОТ")
         await state.set_state(RegisterForm.entering_faculty)
         await callback.answer()
 
     elif choice == "edu_other":
-        await callback.message.edit_text("[4/5] Введіть назву вашого навчального закладу:")
+        await callback.message.edit_text("[4/5] Введи назву твого навчального закладу:")
         await state.set_state(RegisterForm.entering_other_edu)
         await callback.answer()
 
@@ -189,7 +193,7 @@ async def process_other_edu(message: types.Message, state: FSMContext):
         await message.bot.edit_message_text(
             chat_id=message.chat.id,
             message_id=main_msg_id,
-            text="[5/5] 🏫 Введіть назву вашого факультету:"
+            text="[5/5] 🏫 Введи назву твого факультету\nПриклад: ФІОТ"
         )
     except Exception:
         pass
@@ -205,7 +209,57 @@ async def process_faculty(message: types.Message, state: FSMContext):
     except Exception:
         pass
 
-    await show_confirmation_screen(message, state)
+    await ask_for_rules(message, state)
+
+
+async def ask_for_rules(event: types.Message | types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    main_msg_id = data.get("main_message_id")
+
+    bot = event.bot
+    chat_id = event.message.chat.id if isinstance(event, types.CallbackQuery) else event.chat.id
+
+
+    rules_url = os.getenv("RULES_URL")
+
+    text = (
+        f"📜 <b>Правила заходу</b>\n\n"
+        f"Будь ласка, ознайомся із правилами нашого заходу за посиланням нижче:\n"
+        f"<a href='{rules_url}'>Читати правила</a>\n\n"
+        f"Чи згоден/а ти їх дотримуватися?"
+    )
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Погоджуюсь", callback_data="agree_rules", style="success")
+    # builder.button(text="❌ Відмовляюсь", callback_data="cancel_registration")
+    builder.adjust(1)
+
+    if isinstance(event, types.CallbackQuery):
+        await event.message.edit_text(text=text, reply_markup=builder.as_markup(), disable_web_page_preview=False)
+    else:
+        if main_msg_id:
+            try:
+                await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=main_msg_id,
+                    text=text,
+                    reply_markup=builder.as_markup(),
+                    disable_web_page_preview=False
+                )
+            except Exception:
+                new_msg = await event.answer(text=text, reply_markup=builder.as_markup(), disable_web_page_preview=False)
+                await state.update_data(main_message_id=new_msg.message_id)
+        else:
+            new_msg = await event.answer(text=text, reply_markup=builder.as_markup(), disable_web_page_preview=False)
+            await state.update_data(main_message_id=new_msg.message_id)
+
+    await state.set_state(RegisterForm.agreeing_to_rules)
+
+
+@router.callback_query(RegisterForm.agreeing_to_rules, F.data == "agree_rules")
+async def process_agree_rules(callback: types.CallbackQuery, state: FSMContext):
+    await show_confirmation_screen(callback, state)
+    await callback.answer()
 
 
 async def show_confirmation_screen(event: types.Message | types.CallbackQuery, state: FSMContext):
@@ -226,8 +280,11 @@ async def show_confirmation_screen(event: types.Message | types.CallbackQuery, s
         f"📱 <b>Телефон:</b> {phone}\n"
         f"✉️ <b>Пошта:</b> {mail}\n"
         f"🎓 <b>Навчання:</b> {education}\n"
-        f"🏛 <b>Факультет:</b> {faculty}\n\n"
-        f"Все правильно? Натисніть підтвердити для завершення або скасуйте реєстрацію."
+        if faculty != "не навчаюсь"
+            f"🏛 <b>Факультет:</b> {faculty}\n\n"
+        else
+            f"\n"
+        f"Все правильно? Натисни підтвердити для завершення або скасуй реєстрацію."
     )
 
     builder = InlineKeyboardBuilder()
@@ -254,8 +311,6 @@ async def show_confirmation_screen(event: types.Message | types.CallbackQuery, s
             await state.update_data(main_message_id=new_msg.message_id)
 
     await state.set_state(RegisterForm.waiting_confirmation)
-
-
 
 
 @router.callback_query(RegisterForm.waiting_confirmation, F.data == "confirm_registration")
@@ -300,9 +355,12 @@ async def confirm_registration(callback: types.CallbackQuery, state: FSMContext)
             f"📱 <b>Телефон:</b> {phone}\n"
             f"✉️ <b>Пошта:</b> {mail}\n"
             f"🎓 <b>Навчання:</b> {education}\n"
-            f"🏛 <b>Факультет:</b> {faculty}\n\n"
-            f"Ви успішно зареєструвалися на захід. Поміняти дані можна у вкладці 'Профіль'.\n"
-            f"Очікуйте на інформацію про час та місце проведення заходу."
+            if faculty != "не навчаюсь"
+                f"🏛 <b>Факультет:</b> {faculty}\n\n"
+            else
+                f"\n"
+            f"Ти успішно зареєструвалися на захід. Змінити дані можна у вкладці 'Профіль'.\n"
+            f"Очікуй на інформацію про час та місце проведення заходу."
         )
 
         await callback.message.edit_text(text=success_text, reply_markup=builder.as_markup())
@@ -325,10 +383,10 @@ async def confirm_registration(callback: types.CallbackQuery, state: FSMContext)
 @router.callback_query(RegisterForm.waiting_confirmation, F.data == "cancel_registration")
 async def cancel_registration(callback: types.CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
-    builder.button(text="Повернутись в меню", callback_data="controller_hub")
+    builder.button(text="Повернутись в меню", callback_data="controller_hub", style="primary")
 
     await callback.message.edit_text(
-        text="❌ <b>Реєстрацію скасовано.</b> Ваші дані не було збережено в системі.",
+        text="❌ <b>Реєстрацію скасовано.</b> Твої дані не було збережено в системі.",
         reply_markup=builder.as_markup()
     )
     await state.clear()
